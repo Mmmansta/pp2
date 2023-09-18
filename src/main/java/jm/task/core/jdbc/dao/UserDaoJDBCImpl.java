@@ -29,7 +29,7 @@ public class UserDaoJDBCImpl implements UserDao {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
         } catch (SQLException e) {
-
+            throw new RuntimeException(e);
         }
     }
 
@@ -53,23 +53,25 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void removeUserById(long id) {
-        User user = new User();
         String sql = "delete from user where id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
-            System.out.println("юзер удален");
+            connection.commit();
         } catch (SQLException e) {
-        throw new RuntimeException(e);
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException(e);
         }
     }
 
     public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
-        Statement statement = null;
-        try {
-            statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM user");
+        try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM user")) {
+            ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
                 User newuser = new User();
                 newuser.setId(resultSet.getLong("id"));
@@ -78,16 +80,16 @@ public class UserDaoJDBCImpl implements UserDao {
                 newuser.setAge(resultSet.getByte("age"));
                 users.add(newuser);
             }
+            connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            if (statement != null) {
-                statement.close();
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
             }
-            if (connection != null) {
-                statement.close();
-            }
+            throw new RuntimeException(e);
         }
+
         return users;
     }
 
