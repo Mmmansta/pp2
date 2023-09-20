@@ -3,12 +3,16 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-    Connection connection = Util.getConnection();
+    private final Connection connection = Util.getConnection();
 
     public UserDaoJDBCImpl() {
 
@@ -18,7 +22,7 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "create table if not exists user(id bigint primary key not null auto_increment, name varchar(45), lastName varchar(45), age tinyint(3) )";
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -28,7 +32,7 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "drop table if exists user";
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -41,11 +45,10 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
             connection.commit();
-            System.out.println(" user с именем " + name + " " + lastName + " добавлен в базу данных ");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
@@ -58,17 +61,17 @@ public class UserDaoJDBCImpl implements UserDao {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
         }
     }
 
-    public List<User> getAllUsers() throws SQLException {
+    public List<User> getAllUsers()  {
         List<User> users = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM user")) {
             ResultSet resultSet = statement.executeQuery();
@@ -81,10 +84,10 @@ public class UserDaoJDBCImpl implements UserDao {
                 users.add(newuser);
             }
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
@@ -97,7 +100,7 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "truncate table user";
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
